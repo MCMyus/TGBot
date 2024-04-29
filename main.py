@@ -12,6 +12,7 @@ from dotenv import load_dotenv
 
 load_dotenv()
 description = sqlite3.connect('description.sqlite3')
+orders = sqlite3.connect('orders.sqlite3')
 bot = Bot(os.getenv('TOKEN'))
 admin = os.getenv("ADMIN")
 dp = Dispatcher(bot=bot)
