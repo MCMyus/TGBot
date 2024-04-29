@@ -1,6 +1,7 @@
 from aiogram import Bot, Dispatcher, types, executor
 import os
 from apps.rec_inf import rec_inf_markup
+from apps.start import start_markup
 from apps.kvantorium import kvantorium_markup
 from apps.it_cub import it_cube_markup
 from apps.req_contact import req_markup
@@ -14,27 +15,26 @@ description = sqlite3.connect('description.sqlite3')
 bot = Bot(os.getenv('TOKEN'))
 admin = os.getenv("ADMIN")
 dp = Dispatcher(bot=bot)
+temp = []
 
 
 @dp.message_handler(commands=['start'])
 async def start(message: types.Message):
     await message.answer("Здравствуйте! Я бот, который поможет записать вашего ребенка в IT-Cube/Кванториум",
-                         )
+                         reply_markup=start_markup)
 
 
-@dp.callback_query_handler()
+@dp.callback_query_handler(text = 'Rec_start')
 async def rec_inf(call: types.CallbackQuery):
     await call.message.answer('Выберите учреждение',
                               reply_markup=rec_inf_markup)
 
 
-# Кнопки для Кванториума
 @dp.callback_query_handler(text='Кванториум')
 async def kvantorium(call: types.CallbackQuery):
     await call.message.answer("Выберите направление Кванториума:", reply_markup=kvantorium_markup)
 
 
-# Кнопки для IT-куба
 @dp.callback_query_handler(text='IT-Cube')
 async def it_cube(call: types.CallbackQuery):
     await call.message.answer("Выберите направление в IT-кубе:", reply_markup=it_cube_markup)
@@ -55,11 +55,9 @@ async def request(call: types.CallbackQuery):
     await call.message.answer(reply_text, reply_markup=req_markup)
 
 
-# Обработчик контактов
 @dp.message_handler(content_types=['contact'])
 async def handle_contact(message: types.Message):
     phone_number = message.contact.phone_number
-    # Запись номера телефона в файл
     with open('phone_numbers.txt', 'a') as file:
         file.write(phone_number + "n")
     await message.answer("Ваша заявка принята!")
@@ -75,5 +73,4 @@ async def oth(message):
     await message.answer('Я не понимаю вас')
 
 
-# Запускаем бота
 executor.start_polling(dp)
