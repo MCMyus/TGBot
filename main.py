@@ -1,7 +1,8 @@
 from aiogram import Bot, Dispatcher, types, executor
 import os
+from apps.admin import admin_markup
 from apps.rec_inf import rec_inf_markup
-from apps.start import start_markup
+from apps.start import start_markup, astart_markup
 from apps.kvantorium import kvantorium_markup
 from apps.it_cub import it_cube_markup
 from apps.req_contact import req_markup
@@ -20,14 +21,15 @@ temp = []
 
 @dp.message_handler(commands=['start'])
 async def start(message: types.Message):
-    if message.from_user.id != admin:
+    if str(message.from_user.id) != str(admin):
         await message.answer("Здравствуйте! Я бот, который поможет записать вашего ребенка в IT-Cube/Кванториум",
                              reply_markup=start_markup)
     else:
+        await message.answer("Здравствуйте! Я бот, который поможет записать вашего ребенка в IT-Cube/Кванториум",
+                             reply_markup=astart_markup)
 
 
-
-@dp.callback_query_handler(text = 'Rec_start')
+@dp.callback_query_handler(text='Rec_start')
 async def rec_inf(call: types.CallbackQuery):
     await call.message.answer('Выберите учреждение',
                               reply_markup=rec_inf_markup)
@@ -71,9 +73,9 @@ async def handle_contact(message: types.Message):
     await bot.send_message(admin, 'Пришла заявка')
 
 
-@dp.message_handler(lambda message: message.text == 'ADMIN-Панель')
-async def admin_menu(message: types.Message):
-    pass
+@dp.callback_query_handler(text='admin')
+async def admin_menu(call: types.CallbackQuery):
+    await call.message.answer('Добрый день, Админ', reply_markup=admin_markup)
 
 
 @dp.message_handler(lambda message: message.text)
