@@ -11,8 +11,7 @@ import sqlite3
 from dotenv import load_dotenv
 
 load_dotenv()
-description = sqlite3.connect('description.sqlite3')
-orders = sqlite3.connect('orders.sqlite3')
+description = sqlite3.connect('Base.sqlite3')
 bot = Bot(os.getenv('TOKEN'))
 admin = os.getenv("ADMIN")
 dp = Dispatcher(bot=bot)
@@ -45,6 +44,8 @@ async def it_cube(call: types.CallbackQuery):
 async def rec(call: types.CallbackQuery):
     section = sections[int(call.data)]
     cur = description.cursor()
+    cur.execute(f'INSERT INTO [ORDER] (name, section) VALUES ("{call.from_user.first_name} {call.from_user.last_name}",'
+                f' "{section}")')
     info = cur.execute(f'SELECT INFO, age From DESC WHERE Section = "{section}"').fetchall()
     await call.message.answer(f'*{section}*\n{info[0][0]}\nВозраст: {info[0][1]}', reply_markup=rec_markup,
                               parse_mode='Markdown')
@@ -59,9 +60,12 @@ async def request(call: types.CallbackQuery):
 @dp.message_handler(content_types=['contact'])
 async def handle_contact(message: types.Message):
     phone_number = message.contact.phone_number
-    with open('phone_numbers.txt', 'a') as file:
-        file.write(phone_number + "n")
+    cur = description.cursor()
+    cur.execute(f"UPDATE [ORDER] SET phone = '{phone_number}'"
+                f" WHERE name = '{message.from_user.first_name} {message.from_user.last_name}'")
+    description.commit()
     await message.answer("Ваша заявка принята!")
+    await bot.send_message(admin, 'Пришла заявка')
 
 
 @dp.message_handler(lambda message: message.text == 'ADMIN-Панель')
