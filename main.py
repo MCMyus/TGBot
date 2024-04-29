@@ -35,6 +35,12 @@ async def rec_inf(call: types.CallbackQuery):
                               reply_markup=rec_inf_markup)
 
 
+@dp.callback_query_handler(text='faq')
+async def faq(call: types.CallbackQuery):
+
+    await call.message.answer()
+
+
 @dp.callback_query_handler(text='Кванториум')
 async def kvantorium(call: types.CallbackQuery):
     await call.message.answer("Выберите направление Кванториума:", reply_markup=kvantorium_markup)
