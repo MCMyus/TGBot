@@ -20,8 +20,11 @@ temp = []
 
 @dp.message_handler(commands=['start'])
 async def start(message: types.Message):
-    await message.answer("Здравствуйте! Я бот, который поможет записать вашего ребенка в IT-Cube/Кванториум",
-                         reply_markup=start_markup)
+    if message.from_user.id != admin:
+        await message.answer("Здравствуйте! Я бот, который поможет записать вашего ребенка в IT-Cube/Кванториум",
+                             reply_markup=start_markup)
+    else:
+
 
 
 @dp.callback_query_handler(text = 'Rec_start')
