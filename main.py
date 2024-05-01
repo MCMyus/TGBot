@@ -1,5 +1,4 @@
 from aiogram import Bot, Dispatcher, types, executor
-from aiogram.types import InputFile
 from aiogram.dispatcher import FSMContext
 from aiogram.contrib.fsm_storage.memory import MemoryStorage
 from aiogram.dispatcher.filters.state import StatesGroup, State
@@ -18,7 +17,7 @@ from dotenv import load_dotenv
 
 load_dotenv()
 description = base
-bot = Bot(os.getenv('TOKEN'))
+bot = Bot(token=os.getenv('TOKEN'))
 admin = os.getenv("ADMIN")
 storage = MemoryStorage()
 dp = Dispatcher(bot=bot, storage=storage)
