@@ -171,7 +171,7 @@ async def handle_contact(message: types.Message):
     cur.execute(f"UPDATE [ORDER] SET phone = '{phone_number}'"
                 f" WHERE name = '{message.from_user.first_name} {message.from_user.last_name}'")
     description.commit()
-    await message.answer("Ваша заявка принята!")
+    await message.answer("Ваша заявка принята!", reply_markup=types.ReplyKeyboardRemove())
     await bot.send_message(admin, 'Пришла заявка')
 
 
