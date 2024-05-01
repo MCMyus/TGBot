@@ -13,7 +13,6 @@ from apps.it_cub import it_cube_markup
 from apps.req_contact import req_markup
 from apps.record import rec_markup
 from apps.sections import sections
-import sqlite3
 from dotenv import load_dotenv
 
 load_dotenv()
@@ -56,7 +55,7 @@ async def faq(call: types.CallbackQuery):
 
 
 @dp.callback_query_handler(text='rep')
-async def rep(call: types.CallbackQuery, state: FSMContext):
+async def rep(call: types.CallbackQuery):
     await call.message.answer("Напишите ваш вопрос")
     await Helper.rep.set()
 
@@ -73,7 +72,7 @@ async def rep2(message: types.Message, state: FSMContext):
 
 @dp.callback_query_handler(text='ans')
 async def ans(call: types.CallbackQuery, state: FSMContext):
-    cur = description.cursor().execute(f'DELETE from [QST] where num = {call.message.text.split()[-1]}')
+    description.cursor().execute(f'DELETE from [QST] where num = {call.message.text.split()[-1]}')
     description.commit()
     await state.update_data(temp=call.message.text.split()[-3])
     await call.message.answer(f'Введите ответ на вопрос\n{call.message.text}')
@@ -82,7 +81,7 @@ async def ans(call: types.CallbackQuery, state: FSMContext):
 
 @dp.callback_query_handler(text='ign')
 async def ign(call: types.CallbackQuery):
-    cur = description.cursor().execute(f'DELETE from [QST] where num = {call.message.text.split()[-1]}')
+    description.cursor().execute(f'DELETE from [QST] where num = {call.message.text.split()[-1]}')
     description.commit()
     await call.message.answer('Вопрос успешно удалён')
 
@@ -117,7 +116,7 @@ async def faqa(call: types.CallbackQuery):
 
 
 @dp.callback_query_handler(text=list(map(lambda x: f'I{x}', range(100))))
-async def repa2(call: types.CallbackQuery, state: FSMContext):
+async def repa2(call: types.CallbackQuery):
     cur = description.cursor().execute('SELECT * FROM QST').fetchall()[int(call.data[-1]) - 1]
     await call.message.answer(f'Вопрос: {cur[2]}\nID пользователя: {cur[1]}\nID: {cur[0]}', reply_markup=rep_ans_markup)
 
