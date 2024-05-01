@@ -3,6 +3,7 @@ from aiogram.dispatcher import FSMContext
 from aiogram.contrib.fsm_storage.memory import MemoryStorage
 from aiogram.dispatcher.filters.state import StatesGroup, State
 import os
+from base import base
 from apps.repans import rep_ans_markup
 from apps.admin import admin_markup
 from apps.rec_inf import rec_inf_markup
@@ -16,7 +17,7 @@ import sqlite3
 from dotenv import load_dotenv
 
 load_dotenv()
-description = sqlite3.connect('Base.sqlite3')
+description = base
 bot = Bot(os.getenv('TOKEN'))
 admin = os.getenv("ADMIN")
 storage = MemoryStorage()
@@ -55,30 +56,47 @@ async def faq(call: types.CallbackQuery):
 @dp.callback_query_handler(text='rep')
 async def rep(call: types.CallbackQuery, state: FSMContext):
     await call.message.answer("Напишите ваш вопрос")
-    await state.update_data(temp=call.from_user.id)
-    a = await state.get_data()
-    print(a)
     await Helper.rep.set()
 
 
 @dp.message_handler(state=Helper.rep)
 async def rep2(message: types.Message, state: FSMContext):
+    cur = description.cursor()
+    cur.execute(f'INSERT INTO [QST] (ID, QUEST) VALUES ({message.from_user.id}, "{message.text}")')
+    description.commit()
     await message.answer('Ваш вопрос отправлен администраторам')
-    await bot.send_message(admin, f'Поступил вопрос от пользователя {message.from_user.first_name}\n  {message.text}',
-                           reply_markup=rep_ans_markup)
+    await bot.send_message(admin, f'Поступил вопрос от пользователя {message.from_user.first_name}\n  {message.text}')
     await state.reset_state(with_data=False)
 
 
 @dp.callback_query_handler(text='ans')
 async def ans(call: types.CallbackQuery, state: FSMContext):
-    await call.message.answer('Введите ответ на вопрос')
+    cur = description.cursor().execute(f'DELETE from [QST] where num = {call.message.text.split()[-1]}')
+    description.commit()
+    await state.update_data(temp=call.message.text.split()[-3])
+    await call.message.answer(f'Введите ответ на вопрос\n{call.message.text}')
     await Helper.repa.set()
+
+
+@dp.callback_query_handler(text='faqa')
+async def faqa(call: types.CallbackQuery):
+    qst_markup = types.InlineKeyboardMarkup(resize_keyboard=True)
+    cur = description.cursor().execute('SELECT * FROM QST').fetchall()
+    for i in range(1, len(cur) + 1):
+        qst_markup.add(types.InlineKeyboardButton(f'{i}', callback_data=f'I{i}'))
+    res = [f'{i + 1}: {cur[i][1]}: {cur[i][2]}' for i in range(len(cur))]
+    await call.message.answer('\n'.join(res), reply_markup=qst_markup)
+
+
+@dp.callback_query_handler(text=list(map(lambda x: f'I{x}', range(100))))
+async def repa2(call: types.CallbackQuery, state: FSMContext):
+    cur = description.cursor().execute('SELECT * FROM QST').fetchall()[int(call.data[-1]) - 1]
+    await call.message.answer(f'Вопрос: {cur[2]}\nID пользователя: {cur[1]}\nID: {cur[0]}', reply_markup=rep_ans_markup)
 
 
 @dp.message_handler(state=Helper.repa)
 async def ans_text(message: types.Message, state: FSMContext):
     a = await state.get_data()
-    print(a)
     await bot.send_message(a['temp'], f'Поступил ответ на ваш вопрос\n  {message.text}')
     await state.finish()
 
