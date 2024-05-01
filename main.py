@@ -1,4 +1,5 @@
 from aiogram import Bot, Dispatcher, types, executor
+from aiogram.types import InputFile
 from aiogram.dispatcher import FSMContext
 from aiogram.contrib.fsm_storage.memory import MemoryStorage
 from aiogram.dispatcher.filters.state import StatesGroup, State
@@ -35,30 +36,36 @@ class Helper(StatesGroup):
 async def start(message: types.Message):
     with open('users.txt', mode='a', encoding='utf-8') as txt:
         txt.write(f'{message.from_user.id}\n')
+    photo = InputFile('files/preview.jpg')
     if str(message.from_user.id) != str(admin):
-        await message.answer("Здравствуйте! Я бот, который поможет записать вашего ребенка в IT-Cube/Кванториум",
-                             reply_markup=start_markup)
+        await message.answer_photo(photo=photo,
+                                   caption="Здравствуйте! Я бот, который поможет записать вашего ребенка в"
+                                           " IT-Cube/Кванториум", reply_markup=start_markup)
     else:
-        await message.answer("Здравствуйте! Я бот, который поможет записать вашего ребенка в IT-Cube/Кванториум",
-                             reply_markup=astart_markup)
+        await message.answer_photo(photo=photo,
+                                   caption="Здравствуйте! Я бот, который поможет записать вашего ребенка в "
+                                           "IT-Cube/Кванториум", reply_markup=astart_markup)
 
 
 @dp.callback_query_handler(text='Rec_start')
 async def rec_inf(call: types.CallbackQuery):
-    await call.message.answer('Выберите учреждение',
-                              reply_markup=rec_inf_markup)
+    photo = InputFile('files/VS.jpg')
+    await call.message.answer_photo(photo=photo, caption='Выберите учреждение',
+                                    reply_markup=rec_inf_markup)
 
 
 @dp.callback_query_handler(text='faq')
 async def faq(call: types.CallbackQuery):
     a = description.cursor().execute('SELECT * FROM FAQ').fetchall()
     q = [f'{i + 1}: {a[i][0]}\n  Ответ: {a[i][1]}' for i in range(len(a))]
-    await call.message.answer(text='\n'.join(q))
+    photo = InputFile('files/faq.jpg')
+    await call.message.answer_photo(photo=photo, caption='\n'.join(q))
 
 
 @dp.callback_query_handler(text='rep')
 async def rep(call: types.CallbackQuery):
-    await call.message.answer("Напишите ваш вопрос")
+    photo = InputFile('files/faq.jpg')
+    await call.message.answer_photo(photo=photo, caption="Напишите ваш вопрос")
     await Helper.rep.set()
 
 
@@ -67,7 +74,7 @@ async def rep2(message: types.Message, state: FSMContext):
     cur = description.cursor()
     cur.execute(f'INSERT INTO [QST] (ID, QUEST) VALUES ({message.from_user.id}, "{message.text}")')
     description.commit()
-    await message.answer('Ваш вопрос отправлен администраторам')
+    await message.answer('Ваш вопрос отправлен администраторам ✅')
     await bot.send_message(admin, f'Поступил вопрос от пользователя {message.from_user.first_name}\n  {message.text}')
     await state.reset_state(with_data=False)
 
@@ -85,8 +92,7 @@ async def ans(call: types.CallbackQuery, state: FSMContext):
 async def ign(call: types.CallbackQuery):
     description.cursor().execute(f'DELETE from [QST] where num = {call.message.text.split()[-1]}')
     description.commit()
-    a = InputFile('1.jpg')
-    await call.message.answer('Вопрос успешно удалён')
+    await call.message.answer('Вопрос успешно удалён ✅')
 
 
 @dp.callback_query_handler(text='Orders')
@@ -174,13 +180,14 @@ async def handle_contact(message: types.Message):
     cur.execute(f"UPDATE [ORDER] SET phone = '{phone_number}'"
                 f" WHERE name = '{message.from_user.first_name} {message.from_user.last_name}'")
     description.commit()
-    await message.answer("Ваша заявка принята!", reply_markup=types.ReplyKeyboardRemove())
+    await message.answer("Ваша заявка принята! ✅", reply_markup=types.ReplyKeyboardRemove())
     await bot.send_message(admin, 'Пришла заявка')
 
 
 @dp.callback_query_handler(text='admin')
 async def admin_menu(call: types.CallbackQuery):
-    await call.message.answer('Добрый день, Админ', reply_markup=admin_markup)
+    photo = InputFile('files/admin.jpg')
+    await call.message.answer_photo(photo=photo, caption='Добрый день, Админ', reply_markup=admin_markup)
 
 
 @dp.message_handler(lambda message: message.text)
