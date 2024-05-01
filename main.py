@@ -32,6 +32,8 @@ class Helper(StatesGroup):
 
 @dp.message_handler(commands=['start'])
 async def start(message: types.Message):
+    with open('users.txt', mode='a', encoding='utf-8') as txt:
+        txt.write(f'{message.from_user.id}\n')
     if str(message.from_user.id) != str(admin):
         await message.answer("Здравствуйте! Я бот, который поможет записать вашего ребенка в IT-Cube/Кванториум",
                              reply_markup=start_markup)
@@ -78,14 +80,40 @@ async def ans(call: types.CallbackQuery, state: FSMContext):
     await Helper.repa.set()
 
 
+@dp.callback_query_handler(text='ign')
+async def ign(call: types.CallbackQuery):
+    cur = description.cursor().execute(f'DELETE from [QST] where num = {call.message.text.split()[-1]}')
+    description.commit()
+    await call.message.answer('Вопрос успешно удалён')
+
+
+@dp.callback_query_handler(text='Orders')
+async def order(call: types.CallbackQuery):
+    cur = description.cursor().execute('SELECT * FROM [ORDER]').fetchall()
+    if len(cur) != 0:
+        a = [f'ID заявки: {i[0]}\nФИО: {i[1]}\nСекция: {i[2]}\nНомер: {i[3]}\n\n' for i in cur]
+        await call.message.answer(''.join(a))
+    else:
+        await call.message.answer('Заявок нет')
+
+
+@dp.callback_query_handler(text='rasa')
+async def rasa(call: types.CallbackQuery):
+    with open('users.txt', mode='r', encoding='utf-8') as txt:
+        print(txt.read())
+
+
 @dp.callback_query_handler(text='faqa')
 async def faqa(call: types.CallbackQuery):
     qst_markup = types.InlineKeyboardMarkup(resize_keyboard=True)
     cur = description.cursor().execute('SELECT * FROM QST').fetchall()
-    for i in range(1, len(cur) + 1):
-        qst_markup.add(types.InlineKeyboardButton(f'{i}', callback_data=f'I{i}'))
-    res = [f'{i + 1}: {cur[i][1]}: {cur[i][2]}' for i in range(len(cur))]
-    await call.message.answer('\n'.join(res), reply_markup=qst_markup)
+    if len(cur) != 0:
+        for i in range(1, len(cur) + 1):
+            qst_markup.add(types.InlineKeyboardButton(f'{i}', callback_data=f'I{i}'))
+        res = [f'{i + 1}: {cur[i][1]}: {cur[i][2]}' for i in range(len(cur))]
+        await call.message.answer('\n'.join(res), reply_markup=qst_markup)
+    else:
+        await call.message.answer('Контейнер с вопросами пуст')
 
 
 @dp.callback_query_handler(text=list(map(lambda x: f'I{x}', range(100))))
