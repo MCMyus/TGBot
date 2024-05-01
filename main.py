@@ -99,7 +99,9 @@ async def order(call: types.CallbackQuery):
 @dp.callback_query_handler(text='rasa')
 async def rasa(call: types.CallbackQuery):
     with open('users.txt', mode='r', encoding='utf-8') as txt:
-        print(txt.read())
+        a = list(set(txt.read().split()))
+        for i in a:
+            await bot.send_message(i, 'Секс порно письки сиси')
 
 
 @dp.callback_query_handler(text='faqa')
