@@ -1,5 +1,9 @@
 from aiogram import Bot, Dispatcher, types, executor
+from aiogram.dispatcher import FSMContext
+from aiogram.contrib.fsm_storage.memory import MemoryStorage
+from aiogram.dispatcher.filters.state import StatesGroup, State
 import os
+from apps.repans import rep_ans_markup
 from apps.admin import admin_markup
 from apps.rec_inf import rec_inf_markup
 from apps.start import start_markup, astart_markup
@@ -15,8 +19,14 @@ load_dotenv()
 description = sqlite3.connect('Base.sqlite3')
 bot = Bot(os.getenv('TOKEN'))
 admin = os.getenv("ADMIN")
-dp = Dispatcher(bot=bot)
+storage = MemoryStorage()
+dp = Dispatcher(bot=bot, storage=storage)
 temp = []
+
+
+class Helper(StatesGroup):
+    rep = State()
+    repa = State()
 
 
 @dp.message_handler(commands=['start'])
@@ -37,8 +47,40 @@ async def rec_inf(call: types.CallbackQuery):
 
 @dp.callback_query_handler(text='faq')
 async def faq(call: types.CallbackQuery):
+    a = description.cursor().execute('SELECT * FROM FAQ').fetchall()
+    q = [f'{i + 1}: {a[i][0]}\n  Ответ: {a[i][1]}' for i in range(len(a))]
+    await call.message.answer(text='\n'.join(q))
 
-    await call.message.answer()
+
+@dp.callback_query_handler(text='rep')
+async def rep(call: types.CallbackQuery, state: FSMContext):
+    await call.message.answer("Напишите ваш вопрос")
+    await state.update_data(temp=call.from_user.id)
+    a = await state.get_data()
+    print(a)
+    await Helper.rep.set()
+
+
+@dp.message_handler(state=Helper.rep)
+async def rep2(message: types.Message, state: FSMContext):
+    await message.answer('Ваш вопрос отправлен администраторам')
+    await bot.send_message(admin, f'Поступил вопрос от пользователя {message.from_user.first_name}\n  {message.text}',
+                           reply_markup=rep_ans_markup)
+    await state.reset_state(with_data=False)
+
+
+@dp.callback_query_handler(text='ans')
+async def ans(call: types.CallbackQuery, state: FSMContext):
+    await call.message.answer('Введите ответ на вопрос')
+    await Helper.repa.set()
+
+
+@dp.message_handler(state=Helper.repa)
+async def ans_text(message: types.Message, state: FSMContext):
+    a = await state.get_data()
+    print(a)
+    await bot.send_message(a['temp'], f'Поступил ответ на ваш вопрос\n  {message.text}')
+    await state.finish()
 
 
 @dp.callback_query_handler(text='Кванториум')
