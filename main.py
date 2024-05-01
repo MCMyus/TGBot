@@ -15,9 +15,10 @@ from apps.record import rec_markup
 from apps.sections import sections
 from dotenv import load_dotenv
 
-load_dotenv()
+load_dotenv('.env')
 description = base
-bot = Bot(token=os.getenv("TOKEN"))
+TOKEN = os.getenv("TOKEN")
+bot = Bot(token=TOKEN)
 admin = os.getenv("ADMIN")
 storage = MemoryStorage()
 dp = Dispatcher(bot=bot, storage=storage)
