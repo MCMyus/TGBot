@@ -1,4 +1,5 @@
 from aiogram import Bot, Dispatcher, types, executor
+from aiogram.types import InputFile
 from aiogram.dispatcher import FSMContext
 from aiogram.contrib.fsm_storage.memory import MemoryStorage
 from aiogram.dispatcher.filters.state import StatesGroup, State
@@ -84,6 +85,7 @@ async def ans(call: types.CallbackQuery, state: FSMContext):
 async def ign(call: types.CallbackQuery):
     description.cursor().execute(f'DELETE from [QST] where num = {call.message.text.split()[-1]}')
     description.commit()
+    a = InputFile('1.jpg')
     await call.message.answer('Вопрос успешно удалён')
 
 
@@ -104,11 +106,12 @@ async def rasa(call: types.CallbackQuery):
 
 
 @dp.message_handler(state=Helper.rass)
-async def rass(msg: types.Message):
+async def rass(msg: types.Message, state: FSMContext):
     with open('users.txt', mode='r', encoding='utf-8') as txt:
         a = list(set(txt.read().split()))
         for i in a:
             await bot.send_message(i, msg.text)
+    await state.reset_state(with_data=False)
 
 
 @dp.callback_query_handler(text='faqa')
