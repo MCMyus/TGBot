@@ -17,7 +17,7 @@ from dotenv import load_dotenv
 
 load_dotenv()
 description = base
-bot = Bot(token='6411035114:AAG9cqSv7rpvL9tZybNVEkmmu0IV6iOL_7Y')
+bot = Bot(token=os.getenv("TOKEN"))
 admin = os.getenv("ADMIN")
 storage = MemoryStorage()
 dp = Dispatcher(bot=bot, storage=storage)
