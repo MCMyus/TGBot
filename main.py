@@ -5,6 +5,8 @@ from aiogram.contrib.fsm_storage.memory import MemoryStorage
 from aiogram.dispatcher.filters.state import StatesGroup, State
 import os
 from base import base
+from apps.rasa import rasa_markup
+from apps.order import order_markup
 from apps.repans import rep_ans_markup
 from apps.admin import admin_markup
 from apps.rec_inf import rec_inf_markup
@@ -81,17 +83,18 @@ async def rep2(message: types.Message, state: FSMContext):
 
 @dp.callback_query_handler(text='ans')
 async def ans(call: types.CallbackQuery, state: FSMContext):
-    description.cursor().execute(f'DELETE from [QST] where num = {call.message.text.split()[-1]}')
+    description.cursor().execute(f'DELETE from [QST] where num = {call.message.text.split()[0].replace(":", "")}')
     description.commit()
-    await state.update_data(temp=call.message.text.split()[-3])
-    await call.message.answer(f'Введите ответ на вопрос\n{call.message.text}')
+    await state.update_data(temp=call.message.text.split()[1])
+    await call.message.answer(f'Введите ответ на вопрос')
     await Helper.repa.set()
 
 
 @dp.callback_query_handler(text='ign')
 async def ign(call: types.CallbackQuery):
-    description.cursor().execute(f'DELETE from [QST] where num = {call.message.text.split()[-1]}')
+    description.cursor().execute(f'DELETE from [QST] where num = {call.message.text.split()[0].replace(":", "")}')
     description.commit()
+    await call.message.delete()
     await call.message.answer('Вопрос успешно удалён ✅')
 
 
@@ -99,44 +102,70 @@ async def ign(call: types.CallbackQuery):
 async def order(call: types.CallbackQuery):
     cur = description.cursor().execute('SELECT * FROM [ORDER]').fetchall()
     if len(cur) != 0:
-        a = [f'ID заявки: {i[0]}\nФИО: {i[1]}\nСекция: {i[2]}\nНомер: {i[3]}\n\n' for i in cur]
-        await call.message.answer(''.join(a))
+        for i in cur:
+            a = f'ID заявки: {i[0]}\nФИО: {i[1]}\nСекция: {i[2]}\nНомер: {i[3]}\n'
+            await call.message.answer(a, reply_markup=order_markup)
     else:
         await call.message.answer('Заявок нет')
 
 
+@dp.callback_query_handler(text='del')
+async def deleter(call: types.CallbackQuery):
+    cur = description.cursor()
+    inf = call.message.text.split()[2]
+    cur.execute(f'DELETE from [ORDER] where id = {inf}')
+    description.commit()
+    await call.message.delete()
+    await call.message.answer('Заявка успешно удалена')
+
+
 @dp.callback_query_handler(text='rasa')
 async def rasa(call: types.CallbackQuery):
+    await call.message.answer('Выберите тип рассылки', reply_markup=rasa_markup)
+
+
+@dp.callback_query_handler(text='r1')
+async def r1(call: types.CallbackQuery, state: FSMContext):
+    await call.message.delete()
+    await state.update_data(type='❗ Важная информация')
+    await call.message.answer('Введите текст рассылки')
+    await Helper.rass.set()
+
+
+@dp.callback_query_handler(text='r2')
+async def r2(call: types.CallbackQuery, state: FSMContext):
+    await call.message.delete()
+    await state.update_data(type='🔥 Реклама')
+    await call.message.answer('Введите текст рассылки')
+    await Helper.rass.set()
+
+
+@dp.callback_query_handler(text='r3')
+async def r3(call: types.CallbackQuery, state: FSMContext):
+    await call.message.delete()
+    await state.update_data(type='📢 Информация о наборе')
     await call.message.answer('Введите текст рассылки')
     await Helper.rass.set()
 
 
 @dp.message_handler(state=Helper.rass)
 async def rass(msg: types.Message, state: FSMContext):
+    b = await state.get_data()
     with open('users.txt', mode='r', encoding='utf-8') as txt:
         a = list(set(txt.read().split()))
         for i in a:
-            await bot.send_message(i, msg.text)
+            await bot.send_message(i, f'{b["type"]}\n{msg.text}')
     await state.reset_state(with_data=False)
 
 
 @dp.callback_query_handler(text='faqa')
 async def faqa(call: types.CallbackQuery):
-    qst_markup = types.InlineKeyboardMarkup(resize_keyboard=True)
     cur = description.cursor().execute('SELECT * FROM QST').fetchall()
     if len(cur) != 0:
-        for i in range(1, len(cur) + 1):
-            qst_markup.add(types.InlineKeyboardButton(f'{i}', callback_data=f'I{i}'))
-        res = [f'{i + 1}: {cur[i][1]}: {cur[i][2]}' for i in range(len(cur))]
-        await call.message.answer('\n'.join(res), reply_markup=qst_markup)
+        for i in cur:
+            await call.message.answer(f'{i[0]}: {i[1]}: {i[2]}', reply_markup=rep_ans_markup)
     else:
         await call.message.answer('Контейнер с вопросами пуст')
-
-
-@dp.callback_query_handler(text=list(map(lambda x: f'I{x}', range(100))))
-async def repa2(call: types.CallbackQuery):
-    cur = description.cursor().execute('SELECT * FROM QST').fetchall()[int(call.data[-1]) - 1]
-    await call.message.answer(f'Вопрос: {cur[2]}\nID пользователя: {cur[1]}\nID: {cur[0]}', reply_markup=rep_ans_markup)
 
 
 @dp.message_handler(state=Helper.repa)
@@ -148,16 +177,19 @@ async def ans_text(message: types.Message, state: FSMContext):
 
 @dp.callback_query_handler(text='Кванториум')
 async def kvantorium(call: types.CallbackQuery):
+    await call.message.delete()
     await call.message.answer("Выберите направление Кванториума:", reply_markup=kvantorium_markup)
 
 
 @dp.callback_query_handler(text='IT-Cube')
 async def it_cube(call: types.CallbackQuery):
+    await call.message.delete()
     await call.message.answer("Выберите направление в IT-кубе:", reply_markup=it_cube_markup)
 
 
 @dp.callback_query_handler(text=list(map(str, range(16))))
 async def rec(call: types.CallbackQuery):
+    await call.message.delete()
     section = sections[int(call.data)]
     cur = description.cursor()
     cur.execute(f'INSERT INTO [ORDER] (name, section) VALUES ("{call.from_user.first_name} {call.from_user.last_name}",'
@@ -169,6 +201,7 @@ async def rec(call: types.CallbackQuery):
 
 @dp.callback_query_handler(text='Record')
 async def request(call: types.CallbackQuery):
+    await call.message.delete()
     reply_text = f"Прекрасный выбор! Отправьте свой номер телефона, пожалуйста, чтобы администратор с вами связался."
     await call.message.answer(reply_text, reply_markup=req_markup)
 
