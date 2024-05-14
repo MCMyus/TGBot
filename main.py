@@ -227,7 +227,7 @@ async def admin_menu(call: types.CallbackQuery):
 
 @dp.callback_query_handler(text='return')
 async def rtrn(call: types.CallbackQuery):
-    await start(m)
+    await start(call.message)
 
 
 @dp.message_handler(lambda message: message.text)
