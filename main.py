@@ -227,7 +227,15 @@ async def admin_menu(call: types.CallbackQuery):
 
 @dp.callback_query_handler(text='return')
 async def rtrn(call: types.CallbackQuery):
-    await start(call.message)
+    photo = InputFile('files/preview.jpg')
+    if str(call.from_user.id) != str(admin):
+        await call.message.answer_photo(photo=photo,
+                                   caption="Здравствуйте! Я бот, который поможет записать вашего ребенка в"
+                                           " IT-Cube/Кванториум", reply_markup=start_markup)
+    else:
+        await call.message.answer_photo(photo=photo,
+                                   caption="Здравствуйте! Я бот, который поможет записать вашего ребенка в "
+                                           "IT-Cube/Кванториум", reply_markup=astart_markup)
 
 
 @dp.message_handler(lambda message: message.text)
