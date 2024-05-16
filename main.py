@@ -157,7 +157,7 @@ async def rass(msg: types.Message, state: FSMContext):
         a = list(set(txt.read().split()))
         for i in a:
             await bot.send_message(i, f'{b["type"]}\n{msg.text}')
-    await state.reset_state(with_data=False)
+    await state.finish()
 
 
 @dp.callback_query_handler(text='faqa')
