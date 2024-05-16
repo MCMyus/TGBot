@@ -78,7 +78,8 @@ async def rep2(message: types.Message, state: FSMContext):
     cur.execute(f'INSERT INTO [QST] (ID, QUEST) VALUES ({message.from_user.id}, "{message.text}")')
     description.commit()
     await message.answer('Ваш вопрос отправлен администраторам ✅', reply_markup=return_markup)
-    await bot.send_message(admin, f'Поступил вопрос от пользователя {message.from_user.first_name}\n  Вопрос: {message.text}')
+    await bot.send_message(admin, f'Поступил вопрос от пользователя {message.from_user.first_name}\n  Вопрос:'
+                                  f' {message.text}')
     await state.reset_state(with_data=False)
 
 
@@ -230,12 +231,12 @@ async def rtrn(call: types.CallbackQuery):
     photo = InputFile('files/preview.jpg')
     if str(call.from_user.id) != str(admin):
         await call.message.answer_photo(photo=photo,
-                                   caption="Здравствуйте! Я бот, который поможет записать вашего ребенка в"
-                                           " IT-Cube/Кванториум", reply_markup=start_markup)
+                                        caption="Здравствуйте! Я бот, который поможет записать вашего ребенка в"
+                                        " IT-Cube/Кванториум", reply_markup=start_markup)
     else:
         await call.message.answer_photo(photo=photo,
-                                   caption="Здравствуйте! Я бот, который поможет записать вашего ребенка в "
-                                           "IT-Cube/Кванториум", reply_markup=astart_markup)
+                                        caption="Здравствуйте! Я бот, который поможет записать вашего ребенка в "
+                                        "IT-Cube/Кванториум", reply_markup=astart_markup)
 
 
 @dp.message_handler(lambda message: message.text)
